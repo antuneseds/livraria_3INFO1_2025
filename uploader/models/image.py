@@ -3,38 +3,35 @@ import uuid
 
 from django.db import models
 
-from uploader.helpers.files import get_content_type
+
+def image_file_path(image, _) -> str:
+    extension: str = mimetypes.guess_extension(image.file.file.content_type)
+    if extension == '.jpe':
+        extension = '.jpg'
+    return f'images/{image.public_id}{extension or ""}'
 
 
-def document_file_path(document, _) -> str:
-    content_type = get_content_type(document.file)
-    extension: str = mimetypes.guess_extension(content_type)
-
-    return f"documents/{document.public_id}{extension or ''}"
-
-
-class Document(models.Model):
+class Image(models.Model):
     attachment_key = models.UUIDField(
         max_length=255,
         default=uuid.uuid4,
         unique=True,
-        help_text=("Used to attach the document to another object. " "Cannot be used to retrieve the document file."),
+        help_text=('Used to attach the image to another object. Cannot be used to retrieve the image file.'),
     )
     public_id = models.UUIDField(
         max_length=255,
         default=uuid.uuid4,
         unique=True,
         help_text=(
-            "Used to retrieve the document file itself. "
-            "Should not be readable until the document is attached to another object."
+            'Used to retrieve the image itself. Should not be readable until the image is attached to another object.'
         ),
     )
-    file = models.FileField(upload_to=document_file_path)
+    file = models.ImageField(upload_to=image_file_path)
     description = models.CharField(max_length=255, blank=True)
     uploaded_on = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
-        return f"{self.description} - {self.file.name}"
+        return f'{self.description} - {self.attachment_key}'
 
     @property
     def url(self) -> str:
